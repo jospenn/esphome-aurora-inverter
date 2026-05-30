@@ -1,5 +1,6 @@
 #include "ABBAurora.h"
 #include "ABBAuroraStrings.h"
+#include "esp_task_wdt.h"  // add this at the very top of the file
 
 byte ABBAurora::TXPinControl;
 HardwareSerial *ABBAurora::serial;
@@ -95,8 +96,18 @@ bool ABBAurora::Send(byte address, byte param0, byte param1, byte param2, byte p
             SendStatus = true;
 
             digitalWrite(TXPinControl, RS485Receive);
-
-            if (serial->readBytes(ReceiveData, sizeof(ReceiveData)) != 0)
+            
+            unsigned long start = millis();
+            
+            while (serial->available() < sizeof(ReceiveData))
+            {
+                if (millis() - start > 1000)
+                {
+                    return false;
+                }
+            }
+            
+            if (serial->readBytes(ReceiveData, sizeof(ReceiveData)) == sizeof(ReceiveData))
             {
                 if ((int)word(ReceiveData[7], ReceiveData[6]) == Crc16(ReceiveData, 0, 6))
                 {
