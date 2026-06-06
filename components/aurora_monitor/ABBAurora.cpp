@@ -1,6 +1,6 @@
 #include "ABBAurora.h"
 #include "ABBAuroraStrings.h"
-#include "esp_task_wdt.h"  // add this at the very top of the file
+#include "esphome/core/application.h"
 
 byte ABBAurora::TXPinControl;
 HardwareSerial *ABBAurora::serial;
@@ -88,7 +88,7 @@ bool ABBAurora::Send(byte address, byte param0, byte param1, byte param2, byte p
     for (int i = 0; i < this->MaxAttempt; i++)
     {
         digitalWrite(TXPinControl, RS485Transmit);
-        delay(50);
+        App.delay(50);
 
         if (serial->write(SendData, sizeof(SendData)) != 0)
         {
@@ -105,6 +105,8 @@ bool ABBAurora::Send(byte address, byte param0, byte param1, byte param2, byte p
                 {
                     return false;
                 }
+                App.feed_wdt();
+                delay(1);
             }
             
             if (serial->readBytes(ReceiveData, sizeof(ReceiveData)) == sizeof(ReceiveData))
